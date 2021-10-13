@@ -1,0 +1,9 @@
+ovh = {
+  application_key     = ""
+  application_secret  = ""
+  consumer_key        = ""
+  public_cloud_tenant = ""
+  zone = ""
+}
+
+domain = "hf-bench"

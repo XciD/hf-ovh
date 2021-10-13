@@ -1,0 +1,150 @@
+grafana:
+  enabled: false
+
+fullnameOverride: "prom-op"
+
+alertmanager:
+  enabled: false
+
+defaultRules:
+  create: false
+
+kube-state-metrics:
+  enable: false
+
+nodeExporter:
+  serviceMonitor:
+    relabelings:
+      - sourceLabels: [ __meta_kubernetes_pod_node_name ]
+        separator: ;
+        regex: (.*)
+        targetLabel: kubernetes_node
+        replacement: $1
+        action: replace
+
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+kubelet:
+  serviceMonitor:
+    cAdvisor: false
+
+kubeEtcd:
+  enabled: false
+
+## Deploy a Prometheus instance
+##
+prometheus:
+  enabled: true
+  ingress:
+    enabled: true
+    annotations:
+      "kubernetes.io/ingress.class": ${ingress_class}
+      "nginx.ingress.kubernetes.io/auth-type": basic
+      "nginx.ingress.kubernetes.io/auth-secret": ${basic_auth_secret}
+    hosts:
+      - ${domain}
+    pathType: ImplementationSpecific
+  service:
+    port: 80
+  prometheusSpec:
+    scrapeInterval: "1m"
+    scrapeTimeout: "10s"
+    evaluationInterval: "10s"
+    retention: ${retention}
+    retentionSize: ${size}
+    walCompression: "true"
+    enableAdminAPI: "true"
+    nodeSelector:
+      nodepool: ${label}
+    resources: ${jsonencode(prometheus_server_resources)}
+    additionalScrapeConfigs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+            - role: pod
+        relabel_configs:
+          - action: keep
+            regex: true
+            source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+          - action: replace
+            regex: (.+)
+            source_labels:
+              - __meta_kubernetes_pod_annotation_prometheus_io_path
+            target_label: __metrics_path__
+          - action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            source_labels:
+              - __address__
+              - __meta_kubernetes_pod_annotation_prometheus_io_port
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_job_ovh_(.+)
+            replacement: ovh_job_$1
+          - action: labelmap
+            regex: __meta_kubernetes_pod_annotation_job_ovh_(.+)
+            replacement: ovh_job_$1
+          - action: labelmap
+            regex: __meta_kubernetes_pod_annotation_u_job_ovh_(.+)
+            replacement: ovh_job_u_$1
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_namespace
+            target_label: kubernetes_namespace
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: kubernetes_pod_name
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_node_name
+            target_label: kubernetes_node_name
+        scrape_interval: 5s
+      - job_name: kubernetes-nodes
+        scheme: https
+        authorization:
+          type: Bearer
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        scrape_interval: 5s
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - separator: ;
+            regex: __meta_kubernetes_node_label_(.+)
+            replacement: $1
+            action: labelmap
+      - job_name: kubernetes-cadvisor
+        metrics_path: /metrics/cadvisor
+        scheme: https
+        scrape_interval: 5s
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          insecure_skip_verify: true
+        relabel_configs:
+          - separator: ;
+            regex: __meta_kubernetes_node_label_(.+)
+            replacement: $1
+            action: labelmap
+          - source_labels: [ __name__ ]
+            separator: ;
+            regex: container_tasks_state
+            replacement: $1
+            action: drop
+          - source_labels: [ __name__ ]
+            separator: ;
+            regex: kubelet_runtime_.*
+            replacement: $1
+            action: drop
+        kubernetes_sd_configs:
+          - role: node

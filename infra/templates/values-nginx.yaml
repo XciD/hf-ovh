@@ -1,0 +1,56 @@
+controller:
+  ingressClass: ${ingress_class}
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "10254"
+    fluentbit.io/parser: "json_second"
+  metrics:
+    enabled: true
+  service:
+    type: LoadBalancer
+  config:
+    server-tokens: "false"
+    use-gzip: "true"
+    gzip-types: "*"
+    gzip-min-length: "24"
+    log-format-upstream: '{"time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr", "request_id": "$req_id",
+        "bytes_sent": $bytes_sent, "request_time": $request_time, "status":$status, "vhost": "$host", "request_proto": "$server_protocol",
+        "path": "$uri", "request_query": "$args", "request_length": $request_length, "duration": $request_time,"method": "$request_method", "http_referrer": "$http_referer",
+        "http_user_agent": "$http_user_agent", "namespace": "$namespace", "ingress_name": "$ingress_name", "service_name": "$service_name" }'
+  resources: ${jsonencode(nginx_resources)}
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: ${min_replicas}
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 80
+  tolerations:
+    - key: "node-role.kubernetes.io/${label}"
+      operator: Equal
+      value: "true"
+  nodeSelector:
+    nodepool: ${label}
+  livenessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 10
+    port: 10254
+  readinessProbe:
+    failureThreshold: 3
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    successThreshold: 1
+    timeoutSeconds: 10
+    port: 10254
+defaultBackend:
+  enabled: true
+  resources: ${jsonencode(nginx_default_backend_resources)}
+  tolerations:
+    - key: "node-role.kubernetes.io/${label}"
+      operator: Equal
+      value: "true"
+  nodeSelector:
+    nodepool: ${label}

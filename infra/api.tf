@@ -106,6 +106,7 @@ resource "kubernetes_ingress" "rcp" {
       "nginx.ingress.kubernetes.io/proxy-body-size" : "0"
       "nginx.ingress.kubernetes.io/proxy-read-timeout" : "600"
       "nginx.ingress.kubernetes.io/proxy-send-timeout" : "600"
+      "nginx.ingress.kubernetes.io/proxy-connect-timeout" : "600"
     }
   }
 

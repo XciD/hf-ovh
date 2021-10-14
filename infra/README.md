@@ -24,8 +24,8 @@ tf apply
 # Check that the infra works
 
 You can visit:
-- grafana.hf-bench.<domain>
-- prometheus.hf-bench.<domain>
+- grafana.hf-bench.DOMAIN
+- prometheus.hf-bench.DOMAIN
 
 # API
 

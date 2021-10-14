@@ -27,6 +27,19 @@ You can visit:
 - grafana.hf-bench.<domain>
 - prometheus.hf-bench.<domain>
 
+# API
+
+You can check that the API is deployed
+```
+curl api.hf-bench.<domain>/predict -d '{"text": "At least someone answer here"}'
+[{"label": "POSITIVE", "score": 0.9365665316581726}]
+```
+
+You can also visit grafana to display some stats about the API
+
+![doc/dashboard.png](doc/dashboard.png)
+
+
 # Caveat / TODO
 
 - SSL is not handled

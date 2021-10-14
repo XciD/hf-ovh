@@ -20,9 +20,28 @@ variable "namespaces" {
   default = {
     "nginx" : "nginx"
     "prometheus" : "prometheus"
+    "api" : "api"
   }
 }
 
+variable "api_config" {
+  type = map(any)
+  default = {
+    "name" : "api"
+    "image" : "xcid/hf-bench"
+    "tag": "v1"
+    "min_replicas": 2
+    "max_replicas": 6
+  }
+}
+
+variable "api_resources" {
+  type = map(map(any))
+  default = {
+    "limits" : { "cpu" : "2", "memory" : "2G" }
+    "requests" : { "cpu" : "2", "memory" : "2G" }
+  }
+}
 
 variable "nginx_resources" {
   type = map(map(any))

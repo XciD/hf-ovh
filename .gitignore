@@ -1,0 +1,9 @@
+.idea
+
+api/output
+infra/.terraform.lock.hcl
+infra/*.log
+infra/kubeconfig.yaml
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/terraform.tfvars
